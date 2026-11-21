@@ -131,4 +131,7 @@ def test_add_more_than_one_item(
     # then
     content = get_graphql_content(response)
     data = content["data"]["menuItemUpdate"]["errors"][0]
-    assert data["message"] == "More than one item provided."
+    assert data["message"] == (
+        "A menu item can link to only one of: category, collection, page or url. "
+        "You gave: page, url."
+    )
