@@ -11,6 +11,7 @@ from ....core.doc_category import DOC_CATEGORY_USERS
 from ....core.mutations import BaseMutation
 from ....core.types import AccountError
 from ....product.types import ProductVariant
+from ...resolvers import get_wishlist_visible_variants
 from ...types import WishlistItem
 
 
@@ -40,7 +41,11 @@ class WishlistItemAdd(BaseMutation):
     ):
         user = cast(models.User, info.context.user)
         variant = cls.get_node_or_error(
-            info, variant_id, field="variant_id", only_type=ProductVariant
+            info,
+            variant_id,
+            field="variant_id",
+            only_type=ProductVariant,
+            qs=get_wishlist_visible_variants(),
         )
         wishlist_item, _ = models.WishlistItem.objects.get_or_create(
             customer=user, variant=variant

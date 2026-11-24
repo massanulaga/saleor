@@ -4,6 +4,7 @@ import graphene
 from django.utils import timezone
 
 from .....account.models import User, WishlistItem
+from .....product.models import ProductChannelListing
 from ....tests.utils import assert_no_permission, get_graphql_content
 
 WISHLIST_QUERY = """
@@ -77,3 +78,19 @@ def test_wishlist_anonymous_client_is_rejected(api_client, variant, customer_use
 
     # then
     assert_no_permission(response)
+
+
+def test_wishlist_hides_variant_unpublished_after_saving(
+    user_api_client, customer_user, variant
+):
+    # given
+    WishlistItem.objects.create(customer=customer_user, variant=variant)
+    ProductChannelListing.objects.filter(product=variant.product).update(
+        is_published=False
+    )
+
+    # when
+    response = user_api_client.post_graphql(WISHLIST_QUERY)
+
+    # then
+    assert get_graphql_content(response)["data"]["wishlist"] == []

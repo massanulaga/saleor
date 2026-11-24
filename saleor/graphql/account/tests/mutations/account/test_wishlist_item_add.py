@@ -1,6 +1,7 @@
 import graphene
 
 from ......account.models import User, WishlistItem
+from ......product.models import ProductChannelListing
 from .....tests.utils import assert_no_permission, get_graphql_content
 
 WISHLIST_ITEM_ADD_MUTATION = """
@@ -126,3 +127,39 @@ def test_wishlist_item_add_does_not_touch_other_customers(user_api_client, varia
         == 1
     )
     assert WishlistItem.objects.filter(customer=user_api_client.user).count() == 1
+
+
+def test_wishlist_item_add_unpublished_variant_returns_not_found(
+    user_api_client, variant
+):
+    # given
+    ProductChannelListing.objects.filter(product=variant.product).update(
+        is_published=False
+    )
+    variables = {"variantId": _variant_id(variant)}
+
+    # when
+    response = user_api_client.post_graphql(WISHLIST_ITEM_ADD_MUTATION, variables)
+
+    # then
+    data = get_graphql_content(response)["data"]["wishlistItemAdd"]
+    assert data["wishlistItem"] is None
+    assert data["accountErrors"][0]["code"] == "NOT_FOUND"
+    assert not WishlistItem.objects.filter(variant=variant).exists()
+
+
+def test_wishlist_item_add_variant_not_listed_in_channel_returns_not_found(
+    user_api_client, variant
+):
+    # given
+    ProductChannelListing.objects.filter(product=variant.product).delete()
+    variables = {"variantId": _variant_id(variant)}
+
+    # when
+    response = user_api_client.post_graphql(WISHLIST_ITEM_ADD_MUTATION, variables)
+
+    # then
+    data = get_graphql_content(response)["data"]["wishlistItemAdd"]
+    assert data["wishlistItem"] is None
+    assert data["accountErrors"][0]["code"] == "NOT_FOUND"
+    assert not WishlistItem.objects.filter(variant=variant).exists()

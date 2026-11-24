@@ -1,3 +1,4 @@
+import datetime
 from itertools import chain
 
 from django.db.models import Q
@@ -12,6 +13,7 @@ from ...payment.utils import fetch_customer_id
 from ...permission.auth_filters import AuthorizationFilters
 from ...permission.enums import AccountPermissions, OrderPermissions
 from ...permission.utils import has_one_of_permissions
+from ...product.models import ProductChannelListing, ProductVariant
 from ..core import ResolveInfo
 from ..core.tracing import traced_resolver
 from ..core.utils import from_global_id_or_error
@@ -42,10 +44,25 @@ def resolve_customers(info):
     )
 
 
+def get_wishlist_visible_variants():
+    """Return variants a customer may save: published in an active channel."""
+    today = datetime.datetime.now(tz=datetime.UTC)
+    listed_products = ProductChannelListing.objects.filter(
+        Q(published_at__lte=today) | Q(published_at__isnull=True),
+        is_published=True,
+        visible_in_listings=True,
+        channel__is_active=True,
+    ).values("product_id")
+    return ProductVariant.objects.filter(product_id__in=listed_products)
+
+
 def resolve_wishlist(info):
     return (
         models.WishlistItem.objects.using(get_database_connection_name(info.context))
-        .filter(customer=info.context.user)
+        .filter(
+            customer=info.context.user,
+            variant_id__in=get_wishlist_visible_variants().values("pk"),
+        )
         .select_related("variant__product")
         .order_by("created_at")
     )
