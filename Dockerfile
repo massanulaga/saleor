@@ -1,3 +1,6 @@
+### The uv tool, pinned by digest: a named stage, so the copy below is from an earlier stage
+FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
+
 ### Build and install packages
 FROM python:3.12 AS build-python
 
@@ -9,12 +12,10 @@ RUN apt-get -y update \
 
 # Install Python dependencies
 WORKDIR /app
-COPY --from=ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff \
-  /uv /uvx /bin/
+COPY --from=uv /uv /uvx /bin/
 ENV UV_COMPILE_BYTECODE=1 UV_SYSTEM_PYTHON=1 UV_PROJECT_ENVIRONMENT=/usr/local
+COPY uv.lock pyproject.toml ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-editable
 
 ### Final image
