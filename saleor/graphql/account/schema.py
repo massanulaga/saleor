@@ -48,6 +48,8 @@ from .mutations.account import (
     ConfirmEmailChange,
     RequestEmailChange,
     SendConfirmationEmail,
+    WishlistItemAdd,
+    WishlistItemRemove,
 )
 from .mutations.authentication import (
     CreateToken,
@@ -100,6 +102,7 @@ from .resolvers import (
     resolve_permission_groups,
     resolve_staff_users,
     resolve_user,
+    resolve_wishlist,
 )
 from .sorters import (
     CustomerTypeSortingInput,
@@ -116,6 +119,7 @@ from .types import (
     GroupCountableConnection,
     User,
     UserCountableConnection,
+    WishlistItem,
 )
 
 
@@ -237,6 +241,12 @@ class AccountQueries(graphene.ObjectType):
         description="Return the currently authenticated user.",
         doc_category=DOC_CATEGORY_USERS,
     )
+    wishlist = PermissionsField(
+        graphene.NonNull(graphene.List(graphene.NonNull(WishlistItem))),
+        description="Return the wishlist items of the authenticated customer.",
+        permissions=[AuthorizationFilters.AUTHENTICATED_USER],
+        doc_category=DOC_CATEGORY_USERS,
+    )
     staff_users = FilterConnectionField(
         UserCountableConnection,
         filter=StaffUserInput(description="Filtering options for staff users."),
@@ -331,6 +341,10 @@ class AccountQueries(graphene.ObjectType):
         return user if user else None
 
     @staticmethod
+    def resolve_wishlist(_root, info: ResolveInfo):
+        return resolve_wishlist(info)
+
+    @staticmethod
     def resolve_staff_users(_root, info: ResolveInfo, **kwargs):
         qs = resolve_staff_users(info)
         qs = filter_connection_queryset(
@@ -380,6 +394,8 @@ class AccountMutations(graphene.ObjectType):
     account_address_update = AccountAddressUpdate.Field()
     account_address_delete = AccountAddressDelete.Field()
     account_set_default_address = AccountSetDefaultAddress.Field()
+    wishlist_item_add = WishlistItemAdd.Field()
+    wishlist_item_remove = WishlistItemRemove.Field()
 
     account_register = AccountRegister.Field()
     account_update = AccountUpdate.Field()

@@ -42,6 +42,15 @@ def resolve_customers(info):
     )
 
 
+def resolve_wishlist(info):
+    return (
+        models.WishlistItem.objects.using(get_database_connection_name(info.context))
+        .filter(customer=info.context.user)
+        .select_related("variant__product")
+        .order_by("created_at")
+    )
+
+
 def resolve_customer_type(info, id):
     return (
         models.CustomerType.objects.using(get_database_connection_name(info.context))
