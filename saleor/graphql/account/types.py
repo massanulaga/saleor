@@ -1106,6 +1106,53 @@ class User(ModelObjectType[models.User]):
         )
 
 
+def _product_variant_type():
+    # Imported lazily: the product types module imports this module.
+    from ..product.types import ProductVariant
+
+    return ProductVariant
+
+
+def _product_type():
+    from ..product.types import Product
+
+    return Product
+
+
+class WishlistItem(ModelObjectType[models.WishlistItem]):
+    id = graphene.ID(required=True, description="The ID of the wishlist item.")
+    variant = graphene.Field(
+        lambda: _product_variant_type(),
+        required=True,
+        description="The saved product variant.",
+    )
+    product = graphene.Field(
+        lambda: _product_type(),
+        required=True,
+        description="The product of the saved variant.",
+    )
+    created_at = DateTime(
+        required=True, description="When the item was saved to the wishlist."
+    )
+
+    class Meta:
+        description = "An item saved to a customer's wishlist."
+        doc_category = DOC_CATEGORY_USERS
+        model = models.WishlistItem
+
+    @staticmethod
+    def resolve_id(root: models.WishlistItem, _info: ResolveInfo):
+        return to_global_id_or_none(root)
+
+    @staticmethod
+    def resolve_variant(root: models.WishlistItem, _info: ResolveInfo):
+        return ChannelContext(node=root.variant, channel_slug=None)
+
+    @staticmethod
+    def resolve_product(root: models.WishlistItem, _info: ResolveInfo):
+        return ChannelContext(node=root.variant.product, channel_slug=None)
+
+
 class UserCountableConnection(CountableConnection):
     class Meta:
         doc_category = DOC_CATEGORY_USERS
