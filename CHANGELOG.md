@@ -55,6 +55,7 @@ All notable, unreleased changes to this project will be documented in this file.
 ### GraphQL API
 
 - Added the `wishlist` query, returning the authenticated customer's saved product variants, and the `wishlistItemAdd` and `wishlistItemRemove` mutations to save and remove a variant. Adding a variant that is already saved returns the existing item.
+- Added the `User.wishlist` field, letting staff with the `MANAGE_USERS` permission read the products a customer saved to their wishlist. The field is read-only: staff cannot change a customer's wishlist, and the customer cannot read it through `User.wishlist`.
 - Added `stockAvailability` and `stocks` filters to the `productVariants` query `where` input, allowing variants to be filtered by their stock status and stock quantity for a given channel - #17689 by @ayesha-waris
 - `lines` input on the `checkoutCreate` mutation is no longer required. When omitted, a checkout with no lines is created.
 - Removed the deprecated `availableShippingMethods` field from the `Order` type. Use `shippingMethods` instead.

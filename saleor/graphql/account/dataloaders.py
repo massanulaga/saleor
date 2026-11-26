@@ -3,7 +3,14 @@ from collections.abc import Iterable
 from typing import cast
 
 from ...account.exceptions import NoDefaultCustomerType
-from ...account.models import Address, CustomerEvent, CustomerType, Group, User
+from ...account.models import (
+    Address,
+    CustomerEvent,
+    CustomerType,
+    Group,
+    User,
+    WishlistItem,
+)
 from ...account.utils import get_default_customer_type
 from ...attribute.models import Attribute, AttributeCustomerType
 from ...channel.models import Channel
@@ -128,6 +135,27 @@ class CustomerEventsByUserLoader(DataLoader[str, list[CustomerEvent]]):
         for event in events:
             events_by_user_map[event.user_id].append(event)
         return [events_by_user_map.get(user_id, []) for user_id in keys]
+
+
+class WishlistItemsByCustomerLoader(DataLoader[int, list[WishlistItem]]):
+    context_key = "wishlist_items_by_customer"
+
+    def batch_load(self, keys):
+        from .resolvers import get_wishlist_visible_variants
+
+        items = (
+            WishlistItem.objects.using(self.database_connection_name)
+            .filter(
+                customer_id__in=keys,
+                variant_id__in=get_wishlist_visible_variants().values("pk"),
+            )
+            .select_related("variant__product")
+            .order_by("created_at")
+        )
+        items_by_customer_map = defaultdict(list)
+        for item in items:
+            items_by_customer_map[item.customer_id].append(item)
+        return [items_by_customer_map.get(customer_id, []) for customer_id in keys]
 
 
 class ThumbnailByUserIdSizeAndFormatLoader(
