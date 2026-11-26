@@ -100,6 +100,7 @@ from .dataloaders import (
     DefaultCustomerTypeLoader,
     RestrictedChannelAccessByUserIdLoader,
     ThumbnailByUserIdSizeAndFormatLoader,
+    WishlistItemsByCustomerLoader,
 )
 from .enums import CountryCodeEnum, CustomerEventsEnum
 from .utils import can_user_manage_group, get_groups_which_user_can_manage
@@ -554,6 +555,11 @@ class User(ModelObjectType[models.User]):
         description="List of events associated with the user.",
         permissions=[AccountPermissions.MANAGE_USERS, AccountPermissions.MANAGE_STAFF],
     )
+    wishlist = PermissionsField(
+        NonNullList(lambda: WishlistItem),
+        description="The products saved to the customer's wishlist. Visible to staff only.",
+        permissions=[AccountPermissions.MANAGE_USERS],
+    )
     stored_payment_sources = NonNullList(
         "saleor.graphql.payment.types.PaymentSource",
         description=(
@@ -804,6 +810,12 @@ class User(ModelObjectType[models.User]):
         if is_newly_created_user(root):
             return []
         return CustomerEventsByUserLoader(info.context).load(root.id)
+
+    @staticmethod
+    def resolve_wishlist(root: models.User, info: ResolveInfo):
+        if is_newly_created_user(root):
+            return []
+        return WishlistItemsByCustomerLoader(info.context).load(root.id)
 
     @staticmethod
     def resolve_orders(root: models.User, info: ResolveInfo, **kwargs):
