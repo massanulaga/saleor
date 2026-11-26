@@ -413,6 +413,29 @@ class CustomerEvent(models.Model):
         return f"{self.__class__.__name__}(type={self.type!r}, user={self.user!r})"
 
 
+class WishlistItem(models.Model):
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="wishlist_items",
+        on_delete=models.CASCADE,
+    )
+    variant = models.ForeignKey(
+        "product.ProductVariant",
+        related_name="wishlist_items",
+        on_delete=models.CASCADE,
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ("created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=["customer", "variant"],
+                name="unique_wishlist_customer_variant",
+            ),
+        ]
+
+
 class StaffNotificationRecipient(models.Model):
     user = models.OneToOneField(
         User,

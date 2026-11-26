@@ -1679,6 +1679,13 @@ type Query {
   me: User @doc(category: "Users")
 
   """
+  Return the wishlist items of the authenticated customer.
+  
+  Requires one of the following permissions: AUTHENTICATED_USER.
+  """
+  wishlist: [WishlistItem!]! @doc(category: "Users")
+
+  """
   List of the shop's staff users.
   
   Requires one of the following permissions: MANAGE_STAFF.
@@ -18073,6 +18080,21 @@ enum PermissionGroupSortField @doc(category: "Users") {
   NAME
 }
 
+"""An item saved to a customer's wishlist."""
+type WishlistItem @doc(category: "Users") {
+  """The ID of the wishlist item."""
+  id: ID!
+
+  """The saved product variant."""
+  variant: ProductVariant!
+
+  """The product of the saved variant."""
+  product: Product!
+
+  """When the item was saved to the wishlist."""
+  createdAt: DateTime!
+}
+
 input StaffUserInput @doc(category: "Users") {
   status: StaffMemberStatus
   search: String
@@ -22627,6 +22649,26 @@ type Mutation {
     """The type of address."""
     type: AddressTypeEnum!
   ): AccountSetDefaultAddress @doc(category: "Users") @webhookEventsInfo(asyncEvents: [CUSTOMER_UPDATED], syncEvents: [])
+
+  """
+  Saves a product variant to the wishlist of the authenticated customer. Saving a variant that is already on the wishlist returns the existing item. 
+  
+  Requires one of the following permissions: AUTHENTICATED_USER.
+  """
+  wishlistItemAdd(
+    """ID of the product variant to save."""
+    variantId: ID!
+  ): WishlistItemAdd @doc(category: "Users")
+
+  """
+  Removes a product variant from the wishlist of the authenticated customer. 
+  
+  Requires one of the following permissions: AUTHENTICATED_USER.
+  """
+  wishlistItemRemove(
+    """ID of the product variant to remove."""
+    variantId: ID!
+  ): WishlistItemRemove @doc(category: "Users")
 
   """
   Register a new user.
@@ -34018,6 +34060,28 @@ Triggers the following webhook events:
 type AccountSetDefaultAddress @doc(category: "Users") @webhookEventsInfo(asyncEvents: [CUSTOMER_UPDATED], syncEvents: []) {
   """An updated user instance."""
   user: User
+  accountErrors: [AccountError!]! @deprecated(reason: "Use `errors` field instead.")
+  errors: [AccountError!]!
+}
+
+"""
+Saves a product variant to the wishlist of the authenticated customer. Saving a variant that is already on the wishlist returns the existing item. 
+
+Requires one of the following permissions: AUTHENTICATED_USER.
+"""
+type WishlistItemAdd @doc(category: "Users") {
+  """The wishlist item for the saved variant."""
+  wishlistItem: WishlistItem
+  accountErrors: [AccountError!]! @deprecated(reason: "Use `errors` field instead.")
+  errors: [AccountError!]!
+}
+
+"""
+Removes a product variant from the wishlist of the authenticated customer. 
+
+Requires one of the following permissions: AUTHENTICATED_USER.
+"""
+type WishlistItemRemove @doc(category: "Users") {
   accountErrors: [AccountError!]! @deprecated(reason: "Use `errors` field instead.")
   errors: [AccountError!]!
 }
