@@ -3567,6 +3567,13 @@ type User implements Node & ObjectWithMetadata & ObjectWithAttributes @doc(categ
   events: [CustomerEvent!]
 
   """
+  The products saved to the customer's wishlist. Visible to staff only.
+  
+  Requires one of the following permissions: MANAGE_USERS.
+  """
+  wishlist: [WishlistItem!]
+
+  """
   List of stored payment sources. The field returns a list of payment sources stored for payment plugins.
   """
   storedPaymentSources(
@@ -14299,6 +14306,21 @@ enum CustomerEventsEnum @doc(category: "Users") {
   NOTE_ADDED
 }
 
+"""An item saved to a customer's wishlist."""
+type WishlistItem @doc(category: "Users") {
+  """The ID of the wishlist item."""
+  id: ID!
+
+  """The saved product variant."""
+  variant: ProductVariant!
+
+  """The product of the saved variant."""
+  product: Product!
+
+  """When the item was saved to the wishlist."""
+  createdAt: DateTime!
+}
+
 """
 Represents a payment source stored for user in payment gateway, such as credit card.
 
@@ -18078,21 +18100,6 @@ input PermissionGroupSortingInput @doc(category: "Users") {
 enum PermissionGroupSortField @doc(category: "Users") {
   """Sort permission group accounts by name."""
   NAME
-}
-
-"""An item saved to a customer's wishlist."""
-type WishlistItem @doc(category: "Users") {
-  """The ID of the wishlist item."""
-  id: ID!
-
-  """The saved product variant."""
-  variant: ProductVariant!
-
-  """The product of the saved variant."""
-  product: Product!
-
-  """When the item was saved to the wishlist."""
-  createdAt: DateTime!
 }
 
 input StaffUserInput @doc(category: "Users") {
