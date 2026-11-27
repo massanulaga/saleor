@@ -123,3 +123,52 @@ def test_takes_menu_item_tree_lock_before_insert(
     assert content["data"]["menuItemCreate"]["menuItem"]["name"] == name
     created_item = MenuItem.objects.get(name=name, menu=menu)
     assert created_item.parent_id is None
+
+
+def test_create_menu_item_names_clashing_link_fields(
+    staff_api_client, menu, collection, permission_manage_menus
+):
+    # given
+    query = """
+    mutation createMenuItem($menu_id: ID!, $collection: ID!, $url: String!){
+        menuItemCreate(input: {
+            name: "item menu", menu: $menu_id, collection: $collection, url: $url
+        }) {
+            errors {
+                field
+                code
+                message
+            }
+            menuItem {
+                id
+            }
+        }
+    }
+    """
+    menu_id = graphene.Node.to_global_id("Menu", menu.pk)
+    collection_id = graphene.Node.to_global_id("Collection", collection.pk)
+    variables = {
+        "menu_id": menu_id,
+        "collection": collection_id,
+        "url": "http://www.example.com",
+    }
+    items_before = MenuItem.objects.count()
+
+    # when
+    response = staff_api_client.post_graphql(
+        query, variables, permissions=[permission_manage_menus]
+    )
+
+    # then
+    content = get_graphql_content(response)
+    data = content["data"]["menuItemCreate"]
+    assert data["menuItem"] is None
+    assert len(data["errors"]) == 1
+    error = data["errors"][0]
+    assert error["code"] == "TOO_MANY_MENU_ITEMS"
+    assert error["field"] is None
+    assert error["message"] == (
+        "A menu item can link to only one of: category, collection, page or url. "
+        "You gave: collection, url."
+    )
+    assert MenuItem.objects.count() == items_before

@@ -96,16 +96,18 @@ class MenuItemCreate(DeprecatedModelMutation):
         )
         _validate_menu_item_instance(cleaned_input, "category", product_models.Category)
 
-        items = [
-            cleaned_input.get("page"),
-            cleaned_input.get("collection"),
-            cleaned_input.get("url"),
-            cleaned_input.get("category"),
-        ]
-        items = [item for item in items if item is not None]
-        if len(items) > 1:
+        links = {
+            "category": cleaned_input.get("category"),
+            "collection": cleaned_input.get("collection"),
+            "page": cleaned_input.get("page"),
+            "url": cleaned_input.get("url"),
+        }
+        given = [name for name, value in links.items() if value is not None]
+        if len(given) > 1:
             raise ValidationError(
-                "More than one item provided.",
+                "A menu item can link to only one of: category, collection, page or "
+                "url. You gave: "
+                f"{', '.join(given)}.",
                 code=MenuErrorCode.TOO_MANY_MENU_ITEMS.value,
             )
         return cleaned_input
